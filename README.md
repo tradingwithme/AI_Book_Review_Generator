@@ -1,1 +1,1 @@
-# Online-Book-Club AI Review Generator
+# AI Book Review Generator
