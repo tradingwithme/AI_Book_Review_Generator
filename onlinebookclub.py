@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from PIL import Image
+from json import dump
 from time import sleep
 from functools import wraps
 from bs4 import BeautifulSoup
@@ -49,16 +50,13 @@ render="Intel Iris OpenGL Engine",
 fix_hairline=True)
   return driver
 def wrapper(func):
-    @wraps(func)  # This should be here, applied to the wrapper function
+    @wraps(func) 
     def inner_wrapper(*args, **kwargs):
         for attempt in range(6):  # Retry 6 times
-            try:
-                return func(*args, **kwargs)
-            except KeyboardInterrupt:
-                raise
+            try: return func(*args, **kwargs)
+            except KeyboardInterrupt: raise
             except (ElementClickInterceptedException, ElementNotInteractableException):
-                # Close the element if it's blocking interaction
-                for elem in visElement(driver, (By.CSS_SELECTOR, '[data-testid="close-icon-button"]'), showAny=True, selectOne=False):
+                for elem in visElement(driver, (By.CSS_SELECTOR, '[data-testid="close-icon-button"]'), showAny=True, selectOne=False): # Close the element if it's blocking interaction
                     forceClick(driver, elem)
     return inner_wrapper
 @wrapper
@@ -215,12 +213,12 @@ def cleanReview(driver):
 
 from json import load
 with open('bookSummaries.json','r',encoding='utf-16') as file: bookSummaries = load(file)
-with open('bookReviews.json','r',encoding='utf-16') as file: reviewTexts = load(file)
+with open('bookReviews.json','r',encoding='utf-16') as file: reviewTexts2 = load(file)
 bookContent = pd.DataFrame(bookSummaries,columns=['bookTitle','bookContent'])
 bookContent['bookTitle'] = bookContent['bookTitle'].apply(sanitizeText)
 bookContent = bookContent[bookContent['bookContent'].apply(lambda x: len(str(x).split())>10)].reset_index(drop=True)
 bookContent.drop_duplicates().reset_index(drop=True,inplace=True)
-bookReviews = pd.DataFrame(reviewTexts,columns=['bookTitle','reviews'])
+bookReviews = pd.DataFrame(reviewTexts2,columns=['bookTitle','reviews'])
 bookReviews['bookTitle'] = bookReviews['bookTitle'].apply(sanitizeText)
 driver.implicitly_wait(15)
 bookUrls = [i.get('href') for i in getHTML(driver).select('[href]') if 'book.php' in i.get('href')]
@@ -288,7 +286,10 @@ for bookUrl in bookUrls:
   for review in reviews: stringTexts.append(f'Additionally, keep the following in memory for all subsequent prompts/queries: [{review}]')
   for stringText in stringTexts: sendQuery(driver,stringText)
   final_review = sendQuery(driver,"Given everything prior, provide a honest, human-like review that sounds natural in plain text (make sure to rate it as well on a scale of 5): " + bookTitle)
-  if final_review: final_reviews.append((bookTitle,final_review))
+  if final_review: 
+    final_reviews.append((bookTitle,final_review))
+    reviewTexts2.append((bookTitle,final_review))
+    with open('bookReviews.json','w',encoding='utf-16') as file: dump(reviewTexts2,file)
   else: 
     print('Free trial ended. Try again 24 hours from now.')
     break
