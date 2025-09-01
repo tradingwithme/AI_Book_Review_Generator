@@ -1,0 +1,8 @@
+numpy>=1.21.0             # For numerical operations
+pandas>=1.3.0             # For data manipulation and analysis
+Pillow>=8.2.0             # For image handling (PIL)
+beautifulsoup4>=4.9.0     # For parsing HTML and web scraping
+selenium>=4.0.0           # For browser automation
+selenium-stealth>=1.0.0   # To evade bot detection while using Selenium
+langchain_community>=0.0.0 # For interacting with Ollama API
+IPython>=7.0.0            # For using IPython display in Jupyter
