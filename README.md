@@ -1,7 +1,3 @@
-#AI Book Review Generator
-</head>
-<body>
-
 <h1>AI Book Review Generator</h1>
 
 <p>This notebook contains an AI-powered tool for generating book reviews by leveraging web scraping, external APIs (QuillBot and Ollama), and a custom review generation class.</p>
