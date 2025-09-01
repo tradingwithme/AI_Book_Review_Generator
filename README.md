@@ -1,7 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>AI Book Review Generator</title>
+#AI Book Review Generator
 </head>
 <body>
 
