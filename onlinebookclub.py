@@ -11,6 +11,7 @@ from io import BytesIO, StringIO
 from IPython.display import display
 from selenium_stealth import stealth
 from selenium.common.exceptions import *
+from train_model import BookReviewGenerator  # Assuming 'train_model' is your module
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
@@ -19,36 +20,57 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
-def forceClick(driver,element): driver.execute_script("arguments[0].click();", element)
-def getDriver(disable_gpu=False,headless_mode=False,background_mode=False):
-  if disable_gpu or headless_mode: background_mode = True
-  if background_mode:
-    options = Options()
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-setuid-sandbox')
-    if headless_mode: options.add_argument('--headless')
-    if disable_gpu: options.add_argument('--disable-gpu')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--remote-debugging-port=9222')
-  user_agent = [
+import platform
+import random
+
+def forceClick(driver, element):
+    driver.execute_script("arguments[0].click();", element)
+
+def getDriver(disable_gpu=False, headless_mode=False, background_mode=False):
+    """
+    Returns a Selenium WebDriver instance based on the given settings.
+    Supports cross-platform operation for Linux, macOS, and Windows.
+    """
+    # Handle background and headless modes
+    if disable_gpu or headless_mode:
+        background_mode = True
+    if background_mode:
+        options = Options()
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-setuid-sandbox')
+        if headless_mode:
+            options.add_argument('--headless')
+        if disable_gpu:
+            options.add_argument('--disable-gpu')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--remote-debugging-port=9222')
+    # Set User-Agent based on the operating system
+    user_agent = [
 "Mozilla/5.0 (Linux; Android 4.4.4; [HM NOTE|NOTE-III|NOTE2 1LTET) AppleWebKit/537.39 (KHTML, like Gecko)  Chrome/53.0.2111.335 Mobile Safari/536.6",
 "Mozilla / 5.0 (compatible; MSIE 8.0; Windows; U; Windows NT 6.2; x64; en-US Trident / 4.0)",
 "Mozilla/5.0 (iPhone; CPU iPhone OS 8_0_8; like Mac OS X) AppleWebKit/536.13 (KHTML, like Gecko)  Chrome/50.0.2440.333 Mobile Safari/600.1",
 "Mozilla/5.0 (iPod; CPU iPod OS 11_1_7; like Mac OS X) AppleWebKit/603.49 (KHTML, like Gecko)  Chrome/51.0.1709.273 Mobile Safari/533.6"
 ]
-  options.add_argument('--user-agent=%s' % np.random.choice(user_agent))
-  #options.binary_location = '/usr/bin/google-chrome'
-  #service = Service('/content/LICENSE.chromedriver')
-  if background_mode: driver = webdriver.Chrome(options = options) #, service = service)
-  else: driver = webdriver.Chrome()
-  stealth(driver,
-languages=['en-US','en'],
-vendor="Google Inc.",
-platform="Win32",
-webgl_vendor="Intel Inc.",
-render="Intel Iris OpenGL Engine",
-fix_hairline=True)
-  return driver
+    options.add_argument('--user-agent=%s' % random.choice(user_agent))
+    # Determine the appropriate path for ChromeDriver based on OS
+    chrome_driver_path = ""
+    system_platform = platform.system().lower()
+    if system_platform == 'windows':
+        chrome_driver_path = os.path.join(os.getcwd(), 'chromedriver_win.exe')  # Ensure you have chromedriver_win.exe
+    elif system_platform == 'linux':
+        chrome_driver_path = '/usr/bin/chromedriver'  # Make sure chromedriver is installed in the correct location
+    elif system_platform == 'darwin':  # macOS
+        chrome_driver_path = '/usr/local/bin/chromedriver'  # Correct path for macOS (or where chromedriver is installed)
+    # Set up the WebDriver and Service for cross-platform support
+    if background_mode:
+        if chrome_driver_path:  # When ChromeDriver path is provided, use it
+            service = Service(chrome_driver_path)
+            driver = webdriver.Chrome(service=service, options=options)
+        else: driver = webdriver.Chrome(options=options)  # Defaults to system path if no path is specified
+    else: driver = webdriver.Chrome(options=options)  # Regular mode, without background/headless
+    # Apply Stealth for anti-bot measures
+    stealth(driver, languages=['en-US', 'en'], vendor="Google Inc.", platform="Win32", webgl_vendor="Intel Inc.", render="Intel Iris OpenGL Engine", fix_hairline=True)
+    return driver
 def wrapper(func):
     @wraps(func) 
     def inner_wrapper(*args, **kwargs):
@@ -292,12 +314,12 @@ for bookUrl in bookUrls:
     with open('bookReviews.json','w',encoding='utf-16') as file: dump(reviewTexts2,file)
   else: 
     print('Free trial ended. Try again 24 hours from now.')
-    generator = BookReviewGenerator(summary, reviews, bookTitle)
-    if generator.model_ready:
-        final_review = generator.generate_review()
-        print(f"Generated Review for '{bookTitle}':\n{final_review}")
-        final_reviews.append((bookTitle,final_review))
-        reviewTexts2.append((bookTitle,final_review))
-        with open('bookReviews.json','w',encoding='utf-16') as file: dump(reviewTexts2,file)
+    review_generator = BookReviewGenerator(summary, reviews, book_title)
+    final_review = review_generator.generate_review()
+    print("\nFinal Generated Book Review:\n")
+    print(final_review)
+    final_reviews.append((bookTitle,final_review))
+    reviewTexts2.append((bookTitle,final_review))
+    with open('bookReviews.json','w',encoding='utf-16') as file: dump(reviewTexts2,file)
     else: break
 for bookTitle, final_review in final_reviews: print(bookTitle,': \n',final_review)
