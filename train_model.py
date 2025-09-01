@@ -10,12 +10,11 @@ class BookReviewGenerator:
 
     def initialize_conversation(self):
         """Initialize the conversation memory with the book summary and reviews."""
-        return [
+        conversation_list = [
             {"role": "system", "content": "You are a helpful assistant who generates book reviews."},
-            {"role": "user", "content": f"Book Title: {self.book_title}"},
-            {"role": "user", "content": f"Book Summary: {self.summary}"},
-            {"role": "user", "content": "Reviews: " + " ".join(self.reviews)}
-        ]
+            {"role": "user", "content": f"Book Title: {self.book_title}"}]
+        if len(summary) > 100: conversation_list.append({"role": "user", "content": f"Book Content: [{self.summary}]"})
+        for review in reviews: conversation_list.append({"role": "user", "content": f"Reviews: [{review}]"})
     
     def generate_initial_review(self):
         """Generate an initial review based on the summary and reviews."""
