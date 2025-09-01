@@ -1,9 +1,12 @@
 import os
+import random
+import platform
 import numpy as np
 import pandas as pd
 from PIL import Image
 from json import dump
 from time import sleep
+from random import sample
 from functools import wraps
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -11,7 +14,7 @@ from io import BytesIO, StringIO
 from IPython.display import display
 from selenium_stealth import stealth
 from selenium.common.exceptions import *
-from train_model import BookReviewGenerator  # Assuming 'train_model' is your module
+from train_model import BookReviewGenerator  
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
@@ -20,8 +23,6 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
-import platform
-import random
 
 def forceClick(driver, element):
     driver.execute_script("arguments[0].click();", element)
