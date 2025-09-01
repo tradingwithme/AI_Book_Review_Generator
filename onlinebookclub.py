@@ -292,5 +292,12 @@ for bookUrl in bookUrls:
     with open('bookReviews.json','w',encoding='utf-16') as file: dump(reviewTexts2,file)
   else: 
     print('Free trial ended. Try again 24 hours from now.')
-    break
+    generator = BookReviewGenerator(summary, reviews, bookTitle)
+    if generator.model_ready:
+        final_review = generator.generate_review()
+        print(f"Generated Review for '{bookTitle}':\n{final_review}")
+        final_reviews.append((bookTitle,final_review))
+        reviewTexts2.append((bookTitle,final_review))
+        with open('bookReviews.json','w',encoding='utf-16') as file: dump(reviewTexts2,file)
+    else: break
 for bookTitle, final_review in final_reviews: print(bookTitle,': \n',final_review)
