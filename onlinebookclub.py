@@ -14,6 +14,7 @@ from io import BytesIO, StringIO
 from IPython.display import display
 from selenium_stealth import stealth
 from selenium.common.exceptions import *
+from langchain_community.llms import Ollama
 from train_model import BookReviewGenerator  
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -26,6 +27,26 @@ from selenium.webdriver.support import expected_conditions as EC
 
 def forceClick(driver, element):
     driver.execute_script("arguments[0].click();", element)
+
+def install_ollama():
+    """Install Ollama based on the operating system."""
+    system_platform = platform.system().lower()
+    install_script_url = "https://ollama.com/install.sh"
+    
+    if system_platform == 'linux' or system_platform == 'darwin':  # For Linux and macOS
+        subprocess.run(f"curl -fsSL {install_script_url} -o install.sh", shell=True)
+        subprocess.run("sh install.sh", shell=True)
+        subprocess.run("nohup ollama serve &", shell=True)
+        subprocess.run("ollama pull tinyllama", shell=True)
+    elif system_platform == 'windows':  # For Windows, Ollama setup might be different
+        subprocess.run(f"curl -fsSL {install_script_url} -o install.ps1", shell=True)
+        subprocess.run("powershell install.ps1", shell=True)
+        subprocess.run("start-Process -NoNewWindow -FilePath ollama serve", shell=True)
+        subprocess.run("ollama pull tinyllama", shell=True)
+
+def get_ollama_client():
+    """Return Ollama client instance."""
+    return Ollama(model="tinyllama", base_url="http://127.0.0.1:11434")
 
 def getDriver(disable_gpu=False, headless_mode=False, background_mode=False):
     """
