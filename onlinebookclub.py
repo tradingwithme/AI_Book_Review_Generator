@@ -315,7 +315,14 @@ for bookUrl in bookUrls:
     with open('bookReviews.json','w',encoding='utf-16') as file: dump(reviewTexts2,file)
   else: 
     print('Free trial ended. Try again 24 hours from now.')
-    review_generator = BookReviewGenerator(summary, reviews, book_title)
+    # Step 1: Check if Ollama is installed; install if not
+    try: subprocess.run("ollama --version", shell=True, check=True)
+    except subprocess.CalledProcessError:
+        print("Ollama not found, installing it now...")
+        install_ollama()
+    # Step 2: Use Ollama model to generate reviews
+    ollama_llm = get_ollama_client()
+    review_generator = BookReviewGenerator(summary, reviews, bookTitle)
     final_review = review_generator.generate_review()
     print("\nFinal Generated Book Review:\n")
     print(final_review)
