@@ -1,29 +1,31 @@
 import os
 import random
 import platform
-import numpy as np
+import subprocess
 import pandas as pd
 from PIL import Image
 from json import dump
 from time import sleep
+from io import BytesIO
 from random import sample
+import concurrent.futures
 from functools import wraps
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from io import BytesIO, StringIO
 from IPython.display import display
 from selenium_stealth import stealth
 from selenium.common.exceptions import *
 from langchain_community.llms import Ollama
-from train_model import BookReviewGenerator  
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from alt_book_generator import BookReviewGenerator 
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
+
+from gptFineTunedModel import fine_tune_model
 
 def forceClick(driver, element):
     driver.execute_script("arguments[0].click();", element)
@@ -223,7 +225,7 @@ else: headless_mode = False
 driver = getDriver(headless_mode=headless_mode)
 driver.get(url)
 driver.switch_to.new_window('tab')
-driver.switch_to.window(
+driver.switch_to.window(driver.window_handles[0])
 driver.get('https://quillbot.com/login')
 for attempt in range(15):
   username = visElement(driver,(By.NAME,'username'))
@@ -237,14 +239,14 @@ for attempt in range(15):
       QuillBot_password = os.environ['QuillBot_password']
     username.clear()
     clearEntry(driver,username)
-    username.send_keys(userdata.get(QuillBot_username))
+    username.send_keys(os.get(QuillBot_username))
     sleep(1.5)
     assignText(driver,username,QuillBot_username)
     password.clear()
     clearEntry(driver,password)
     password.send_keys(QuillBot_password)
     sleep(1.5)
-    assignText(driver,password,userdata.get(QuillBot_password))
+    assignText(driver,password,os.get(QuillBot_password))
     loginButton.click()
   else: break
 if visElement(driver,(By.NAME,'username'),showAny=True,selectOne=False): raise Exception('Unsuccessful login!')
@@ -343,12 +345,18 @@ for bookUrl in bookUrls:
         install_ollama()
     # Step 2: Use Ollama model to generate reviews
     ollama_llm = get_ollama_client()
-    review_generator = BookReviewGenerator(summary, reviews, bookTitle)
-    final_review = review_generator.generate_review()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_fine_tune = executor.submit(fine_tune_model, bookTitle, summary, reviews, generate=False)
+        future_generate = executor.submit(BookReviewGenerator, ollama_llm, summary, reviews, bookTitle)
+
+        # Wait for both operations to finish and get the results
+        fine_tune_review = future_fine_tune.result()
+        generated_review = future_generate.result()
+    #review_generator = BookReviewGenerator(ollama_llm, summary, reviews, bookTitle)
+    #final_review = review_generator.generate_review()
     print("\nFinal Generated Book Review:\n")
-    print(final_review)
+    print(generated_review)
     final_reviews.append((bookTitle,final_review))
     reviewTexts2.append((bookTitle,final_review))
     with open('bookReviews.json','w',encoding='utf-16') as file: dump(reviewTexts2,file)
-    else: break
 for bookTitle, final_review in final_reviews: print(bookTitle,': \n',final_review)

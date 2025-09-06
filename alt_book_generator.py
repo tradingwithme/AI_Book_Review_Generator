@@ -2,20 +2,16 @@ import subprocess
 import json
 
 class BookReviewGenerator:
-    def __init__(self, summary, reviews, book_title):
+    def __init__(self, summary:str, reviews:list, book_title:str):
         self.summary = summary
         self.reviews = reviews
         self.book_title = book_title
-        self.conversation_memory = self.initialize_conversation()
+        self.conversation_memory = [{"role": "system", 
+"content": "You are a helpful assistant who generates book reviews."},
+{"role": "user", "content": f"Book Title: {self.book_title}"}]
+        if len(self.summary) > 100: self.conversation_memory.append({"role": "user", "content": f"Book Content: [{self.summary}]"})
+        for review in self.reviews: self.conversation_memory.append({"role": "user", "content": f"Reviews: [{review}]"})
 
-    def initialize_conversation(self):
-        """Initialize the conversation memory with the book summary and reviews."""
-        conversation_list = [
-            {"role": "system", "content": "You are a helpful assistant who generates book reviews."},
-            {"role": "user", "content": f"Book Title: {self.book_title}"}]
-        if len(summary) > 100: conversation_list.append({"role": "user", "content": f"Book Content: [{self.summary}]"})
-        for review in reviews: conversation_list.append({"role": "user", "content": f"Reviews: [{review}]"})
-    
     def generate_initial_review(self):
         """Generate an initial review based on the summary and reviews."""
         self.conversation_memory.append({
